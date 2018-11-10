@@ -1,0 +1,45 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'CloudFormation pseudo parameters macro.'
+Resources:
+   FunctionRole:
+      Type: AWS::IAM::Role
+      Properties:
+         AssumeRolePolicyDocument:
+            Version: 2012-10-17
+            Statement:
+               -
+                  Principal:
+                     Service: !Sub 'lambda.${AWS::URLSuffix}'
+                  Action: sts:AssumeRole
+                  Effect: Allow
+         ManagedPolicyArns:
+            - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+   Function:
+      Type: AWS::Lambda::Function
+      Properties:
+         Role: !GetAtt FunctionRole.Arn
+         Runtime: python3.6
+         Code:
+            ZipFile: |
+               def handler(event, context):
+                  return {
+                     'requestId': event['requestId'],
+                     'status': 'success',
+                     'fragment': {
+                        pseudo_parameter: {
+                           'Description': f'Value of the AWS::{pseudo_parameter} pseudo parameter.',
+                           'Value': {
+                              'Ref': f'AWS::{pseudo_parameter}',
+                           },
+                        }
+                        for pseudo_parameter in event['params']['PseudoParameters'].split(',')
+                     },
+                  }
+         Handler: index.handler
+   Macro:
+      Type: AWS::CloudFormation::Macro
+      Properties:
+         Name: pseudoparam
+         Description: 'Generates a CloudFormation template that outputs the values of pseudo parameters.'
+         FunctionName: !GetAtt Function.Arn

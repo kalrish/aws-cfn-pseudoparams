@@ -1,0 +1,29 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Output CloudFormation pseudo parameters.'
+Parameters:
+   PseudoParameters:
+      Description: 'Pseudo parameters to list.'
+      Type: CommaDelimitedList
+      Default: AccountId,Partition,Region,StackId,StackName,URLSuffix
+Metadata:
+   AWS::CloudFormation::Interface:
+      ParameterGroups:
+         -
+            Label:
+               default: General
+            Parameters:
+               - PseudoParameters
+      ParameterLabels:
+         PseudoParameters:
+            default: Pseudo parameters
+Resources:
+   dummy:
+      Type: AWS::CloudFormation::WaitConditionHandle
+Outputs:
+   Fn::Transform:
+      Name: pseudoparam
+      Parameters:
+         PseudoParameters: !Join
+            - ','
+            - !Ref PseudoParameters
